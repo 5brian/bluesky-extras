@@ -2,9 +2,9 @@
   "manifest_version": 3,
   "name": "bluesky-likes",
   "version": "1.0",
-  "description": "display likes tab",
+  "description": "beta",
   "permissions": ["activeTab"],
-  "host_permissions": ["https://api.bsky.app/*"],
+  "host_permissions": ["https://bsky.app/*", "https://bsky.social/*"],
   "content_scripts": [
     {
       "matches": ["https://bsky.app/profile/*"],
