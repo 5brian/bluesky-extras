@@ -29,7 +29,7 @@ interface LikeRecord {
 
 async function getDid(handle: string): Promise<string> {
   const response = await fetch(
-    `https://bsky.social/xrpc/com.atproto.identity.resolveHandle?handle=${handle}`
+    `https://bsky.social/xrpc/com.atproto.identity.resolveHandle?handle=${handle}`,
   );
   if (!response.ok) throw new Error("Could not resolve handle");
   const data = await response.json();
@@ -40,7 +40,7 @@ async function getPostContent(uri: string): Promise<PostContent | null> {
   try {
     const [repo, collection, rkey] = uri.split("/").slice(-3);
     const response = await fetch(
-      `https://bsky.social/xrpc/com.atproto.repo.getRecord?repo=${repo}&collection=${collection}&rkey=${rkey}`
+      `https://bsky.social/xrpc/com.atproto.repo.getRecord?repo=${repo}&collection=${collection}&rkey=${rkey}`,
     );
 
     if (!response.ok)
@@ -65,7 +65,7 @@ async function fetchLikes(handle: string): Promise<void> {
         headers: {
           Accept: "application/json",
         },
-      }
+      },
     );
 
     if (!response.ok)
@@ -81,7 +81,7 @@ async function fetchLikes(handle: string): Promise<void> {
           ...like,
           postContent: content,
         };
-      })
+      }),
     );
 
     await showLikesPopup(postsWithContent);
@@ -94,7 +94,7 @@ async function fetchLikes(handle: string): Promise<void> {
 async function getHandleFromDid(did: string): Promise<string | null> {
   try {
     const response = await fetch(
-      `https://bsky.social/xrpc/com.atproto.repo.describeRepo?repo=${did}`
+      `https://bsky.social/xrpc/com.atproto.repo.describeRepo?repo=${did}`,
     );
     if (!response.ok) throw new Error("Could not resolve DID");
     const data = await response.json();
@@ -148,7 +148,7 @@ async function showLikesPopup(likes: LikeRecord[]): Promise<void> {
         const [, , author] = like.value.subject.uri.split("/");
         const handle = await getHandleFromDid(author);
         if (handle) handles.set(author, handle);
-      })
+      }),
     );
 
     likes.forEach((like) => {
@@ -176,7 +176,7 @@ async function showLikesPopup(likes: LikeRecord[]): Promise<void> {
           <div style="white-space: pre-wrap; margin-bottom: 10px;">${
             like.postContent?.text ?? ""
           }</div>
-          ${hasImages ? `<div>[Post contains image(s)]</div>` : ""}
+          ${hasImages ? `<div>[Post contains media]</div>` : ""}
           <div style="color: #666; font-size: 0.9em;">
             <a href="${postUrl}" target="_blank" style="color: rgb(32, 139, 254); text-decoration: none;">View post</a>
             · Liked at: ${new Date(like.value.createdAt).toLocaleString()}
@@ -197,7 +197,7 @@ function addLikesButton(): void {
   if (existingButton) return;
 
   const feedbackLink = document.querySelector<HTMLAnchorElement>(
-    'a[href*="blueskyweb.zendesk.com"]'
+    'a[href*="blueskyweb.zendesk.com"]',
   );
   if (!feedbackLink?.parentElement) return;
 
