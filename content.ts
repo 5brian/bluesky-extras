@@ -1,4 +1,33 @@
-async function getDid(handle) {
+interface Author {
+  did: string;
+  handle: string;
+  displayName?: string;
+}
+
+interface PostContent {
+  text: string;
+  repo: string;
+  author: Author;
+  embed?: {
+    images?: any[];
+    media?: {
+      images?: any[];
+    };
+  };
+  uri?: string;
+}
+
+interface LikeRecord {
+  value: {
+    subject: {
+      uri: string;
+    };
+    createdAt: string;
+  };
+  postContent?: PostContent;
+}
+
+async function getDid(handle: string): Promise<string> {
   const response = await fetch(
     `https://bsky.social/xrpc/com.atproto.identity.resolveHandle?handle=${handle}`
   );
@@ -7,7 +36,7 @@ async function getDid(handle) {
   return data.did;
 }
 
-async function getPostContent(uri) {
+async function getPostContent(uri: string): Promise<PostContent | null> {
   try {
     const [repo, collection, rkey] = uri.split("/").slice(-3);
     const response = await fetch(
@@ -25,7 +54,7 @@ async function getPostContent(uri) {
   }
 }
 
-async function fetchLikes(handle) {
+async function fetchLikes(handle: string): Promise<void> {
   try {
     const did = await getDid(handle);
     console.log("Got DID:", did);
@@ -45,9 +74,8 @@ async function fetchLikes(handle) {
     const data = await response.json();
     console.log("Likes data:", data);
 
-    // Fetch content for each liked post
     const postsWithContent = await Promise.all(
-      data.records.map(async (like) => {
+      data.records.map(async (like: LikeRecord) => {
         const content = await getPostContent(like.value.subject.uri);
         return {
           ...like,
@@ -56,50 +84,73 @@ async function fetchLikes(handle) {
       })
     );
 
-    showLikesPopup(postsWithContent);
+    await showLikesPopup(postsWithContent);
   } catch (error) {
     console.error("Full error:", error);
-    alert("Error fetching likes: " + error.message);
+    alert("Error fetching likes: " + (error as Error).message);
   }
 }
 
-function showLikesPopup(likes) {
+async function getHandleFromDid(did: string): Promise<string | null> {
+  try {
+    const response = await fetch(
+      `https://bsky.social/xrpc/com.atproto.repo.describeRepo?repo=${did}`
+    );
+    if (!response.ok) throw new Error("Could not resolve DID");
+    const data = await response.json();
+    return data.handle;
+  } catch (error) {
+    console.error("Error getting handle:", error);
+    return null;
+  }
+}
+
+async function showLikesPopup(likes: LikeRecord[]): Promise<void> {
   const popup = document.createElement("div");
   popup.style.cssText = `
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 80%;
-        max-height: 80vh;
-        overflow-y: auto;
-        background: white;
-        padding: 20px;
-        border-radius: 8px;
-        box-shadow: 0 0 10px rgba(0,0,0,0.5);
-        z-index: 10000;
-        color: black;
-      `;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 80%;
+      max-height: 80vh;
+      overflow-y: auto;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+      z-index: 10000;
+      color: black;
+    `;
 
   const closeBtn = document.createElement("button");
   closeBtn.textContent = "Close";
   closeBtn.style.cssText = `
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        padding: 5px 10px;
-        background: #ff4444;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-      `;
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      padding: 5px 10px;
+      background: #ff4444;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    `;
   closeBtn.onclick = () => popup.remove();
   popup.appendChild(closeBtn);
 
   const content = document.createElement("div");
 
   if (likes && likes.length > 0) {
+    const handles = new Map<string, string>();
+    await Promise.all(
+      likes.map(async (like) => {
+        const [, , author] = like.value.subject.uri.split("/");
+        const handle = await getHandleFromDid(author);
+        if (handle) handles.set(author, handle);
+      })
+    );
+
     likes.forEach((like) => {
       const post = document.createElement("div");
       post.style.cssText = `
@@ -110,16 +161,25 @@ function showLikesPopup(likes) {
           border-radius: 8px;
         `;
 
-      const postContent = like.postContent?.text || "Content not available";
+      const [, , author] = like.value.subject.uri.split("/");
+      const postId = like.value.subject.uri.split("/").pop();
+      const handle = handles.get(author) || author;
+      const postUrl = `https://bsky.app/profile/${handle}/post/${postId}`;
+      const hasImages =
+        (like.postContent?.embed?.images?.length ?? 0) > 0 ||
+        (like.postContent?.embed?.media?.images?.length ?? 0) > 0;
 
       post.innerHTML = `
-          <div style="margin-bottom: 10px; font-weight: bold;">Post Content:</div>
-          <div style="white-space: pre-wrap; margin-bottom: 10px;">${postContent}</div>
-          <div style="color: #666; font-size: 0.9em;">
-            Liked at: ${new Date(like.value.createdAt).toLocaleString()}
+          <div style="margin-bottom: 5px;">
+            @${handle}
           </div>
-          <div style="color: #888; font-size: 0.8em; margin-top: 5px;">
-            URI: ${like.value.subject.uri}
+          <div style="white-space: pre-wrap; margin-bottom: 10px;">${
+            like.postContent?.text ?? ""
+          }</div>
+          ${hasImages ? `<div>[Post contains image(s)]</div>` : ""}
+          <div style="color: #666; font-size: 0.9em;">
+            <a href="${postUrl}" target="_blank" style="color: rgb(32, 139, 254); text-decoration: none;">View post</a>
+            · Liked at: ${new Date(like.value.createdAt).toLocaleString()}
           </div>
         `;
       content.appendChild(post);
@@ -132,11 +192,11 @@ function showLikesPopup(likes) {
   document.body.appendChild(popup);
 }
 
-function addLikesButton() {
+function addLikesButton(): void {
   const existingButton = document.querySelector("#bsky-likes-btn");
   if (existingButton) return;
 
-  const feedbackLink = document.querySelector(
+  const feedbackLink = document.querySelector<HTMLAnchorElement>(
     'a[href*="blueskyweb.zendesk.com"]'
   );
   if (!feedbackLink?.parentElement) return;
@@ -149,13 +209,13 @@ function addLikesButton() {
   link.role = "link";
   link.className = "css-146c3p1 r-1loqt21";
   link.style.cssText = `
-        color: rgb(32, 139, 254);
-        font-size: 14px;
-        letter-spacing: 0px;
-        font-weight: 400;
-        font-family: InterVariable, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
-        font-variant: no-contextual;
-      `;
+      color: rgb(32, 139, 254);
+      font-size: 14px;
+      letter-spacing: 0px;
+      font-weight: 400;
+      font-family: InterVariable, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+      font-variant: no-contextual;
+    `;
 
   link.onclick = (e) => {
     e.preventDefault();
