@@ -185,7 +185,7 @@ async function showLikesPopup(likes: LikeRecord[]): Promise<void> {
   document.body.append(overlay, popup);
 }
 
-function addLikesButton(): void {
+async function addLikesButton(): Promise<void> {
   if (document.querySelector("#bsky-likes-btn")) return;
   
   const feedbackLink = document.querySelector<HTMLAnchorElement>('a[href*="blueskyweb.zendesk.com"]');
@@ -194,27 +194,21 @@ function addLikesButton(): void {
     return;
   }
   
-  const link = document.createElement("a");
+  const link = document.createElement("div");
   link.id = "bsky-likes-btn";
   link.textContent = "Show Likes";
-  link.href = "#";
-  link.dir = "auto";
-  link.role = "link";
-  link.className = "css-146c3p1 r-1loqt21";
   link.style.cssText = `
     color: rgb(32, 139, 254);
     font-size: 14px;
-    letter-spacing: 0px;
-    font-weight: 400;
-    font-family: InterVariable, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    font-variant: no-contextual;
+    cursor: pointer;
+    margin-top: 2px;
   `;
+
+  const pathParts = window.location.pathname.split("/");
+  const handle = pathParts[1] === "profile" ? pathParts[2] : null;
   
   link.onclick = (e) => {
     e.preventDefault();
-    const pathParts = window.location.pathname.split("/");
-    const handle = pathParts[1] === "profile" ? pathParts[2] : null;
-    
     if (handle) {
       fetchLikes(handle);
     } else {
@@ -223,9 +217,62 @@ function addLikesButton(): void {
   };
 
   feedbackLink.parentElement.appendChild(link);
+
+  if (handle) {
+    const response = await fetch(
+      `https://bsky.social/xrpc/com.atproto.repo.describeRepo?repo=${handle}`
+    );
+
+    if (response.ok) {
+      const data = await response.json();
+      const did = data.did;
+
+      const tools = [
+        { name: "ATP Browser", url: `https://atproto-browser.vercel.app/at/${did}` },
+        { name: "PDSls", url: `https://pdsls.dev/at/${did}` },
+        { name: "PLC Tracker", url: `https://pht.kpherox.dev/did/${did}` },
+        { name: "Internect", url: `https://internect.info/did/${did}` },
+        { name: "SkyTools", url: `https://skytools.anon5r.com/history?id=${did}` }
+      ];
+
+      const didDiv = document.createElement("div");
+      didDiv.style.cssText = `
+        color: rgb(32, 139, 254);
+        font-size: 14px;
+        margin-top: 2px;
+      `;
+      didDiv.textContent = `DID: ${did}`;
+      feedbackLink.parentElement.appendChild(didDiv);
+
+      tools.forEach((tool, index) => {
+        if (index > 0) {
+          const separator = document.createElement("span");
+          separator.textContent = " · ";
+          separator.style.color = "#687684";
+          feedbackLink.parentElement?.appendChild(separator);
+        }
+        
+        const toolLink = document.createElement("a");
+        toolLink.href = tool.url;
+        toolLink.target = "_blank";
+        toolLink.textContent = tool.name;
+        toolLink.style.cssText = `
+          color: rgb(32, 139, 254);
+          font-size: 14px;
+          display: inline;
+          margin-top: 2px;
+          text-decoration: none;
+        `;
+        feedbackLink.parentElement?.appendChild(toolLink);
+      });
+    }
+  }
 }
 
-addLikesButton();
-
 const observer = new MutationObserver(addLikesButton);
-observer.observe(document.body, { childList: true, subtree: true });
+
+addLikesButton();
+observer.observe(document.body, {
+  childList: true,
+  subtree: true
+});
