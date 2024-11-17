@@ -1,6 +1,6 @@
-# bluesky-likes
+# bluesky-extras
 
-chrome extension to show users likes in bsky.app 
+chrome extension to show users stats in bsky.app 
  
 ## dev
 
@@ -30,4 +30,6 @@ chrome extension to show users likes in bsky.app
 
 1. open profile
 
-2. select `Show Likes` in footnote
+2. refresh
+
+3. select tool from footer
