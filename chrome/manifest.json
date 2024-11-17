@@ -6,13 +6,11 @@
   "permissions": ["activeTab"],
   "host_permissions": [
     "https://bsky.app/*",
-    "https://bsky.social/*",
-    "https://*.bsky.social/*",
-    "https://cdn.bsky.app/*"
+    "https://bsky.social/*"
   ],
   "content_scripts": [
     {
-      "matches": ["https://bsky.app/profile/*"],
+      "matches": ["https://bsky.app/*"],
       "js": ["dist/content.js"]
     }
   ]
