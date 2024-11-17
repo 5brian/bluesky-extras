@@ -1,6 +1,6 @@
 # bluesky-extras
 
-chrome extension to show users stats in bsky.app 
+chrome extension to show DID stats in bsky.app 
  
 ## dev
 
