@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "bluesky-likes",
+  "name": "bluesky-extras",
   "version": "1.0.0",
-  "description": "display users likes",
+  "description": "display DID tools in footer",
   "permissions": ["activeTab"],
   "host_permissions": [
     "https://bsky.app/*",

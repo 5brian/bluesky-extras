@@ -1,13 +1,13 @@
 # bluesky-extras
 
-chrome extension to show DID stats in bsky.app 
+chrome extension to show DID tools in bsky.app 
  
 ## dev
 
 1. clone:
 
    ```
-   git clone https://github.com/yoleuh/bluesky-likes.git
+   git clone https://github.com/yoleuh/bluesky-extras.git
    ```
 
 2. run:
