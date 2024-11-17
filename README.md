@@ -1,3 +1,7 @@
+# bluesky-likes
+
+chrome extension to show users likes in bsky.app 
+ 
 ## dev
 
 1. clone:
