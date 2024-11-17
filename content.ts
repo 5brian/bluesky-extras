@@ -207,65 +207,63 @@ async function addLikesButton(): Promise<void> {
   const pathParts = window.location.pathname.split("/");
   const handle = pathParts[1] === "profile" ? pathParts[2] : null;
   
+  if (!handle) {
+    return;  // Exit early if not on a profile page
+  }
+
   link.onclick = (e) => {
     e.preventDefault();
-    if (handle) {
-      fetchLikes(handle);
-    } else {
-      alert("This feature only works on profile pages");
-    }
+    fetchLikes(handle);
   };
 
-  feedbackLink.parentElement.appendChild(link);
+  feedbackLink.parentElement?.appendChild(link);
 
-  if (handle) {
-    const response = await fetch(
-      `https://bsky.social/xrpc/com.atproto.repo.describeRepo?repo=${handle}`
-    );
+  const response = await fetch(
+    `https://bsky.social/xrpc/com.atproto.repo.describeRepo?repo=${handle}`
+  );
 
-    if (response.ok) {
-      const data = await response.json();
-      const did = data.did;
+  if (response.ok) {
+    const data = await response.json();
+    const did = data.did;
 
-      const tools = [
-        { name: "ATP Browser", url: `https://atproto-browser.vercel.app/at/${did}` },
-        { name: "PDSls", url: `https://pdsls.dev/at/${did}` },
-        { name: "PLC Tracker", url: `https://pht.kpherox.dev/did/${did}` },
-        { name: "Internect", url: `https://internect.info/did/${did}` },
-        { name: "SkyTools", url: `https://skytools.anon5r.com/history?id=${did}` }
-      ];
+    const tools = [
+      { name: "ATP Browser", url: `https://atproto-browser.vercel.app/at/${did}` },
+      { name: "PDSls", url: `https://pdsls.dev/at/${did}` },
+      { name: "PLC Tracker", url: `https://pht.kpherox.dev/did/${did}` },
+      { name: "Internect", url: `https://internect.info/did/${did}` },
+      { name: "SkyTools", url: `https://skytools.anon5r.com/history?id=${did}` }
+    ];
 
-      const didDiv = document.createElement("div");
-      didDiv.style.cssText = `
+    const didDiv = document.createElement("div");
+    didDiv.style.cssText = `
+      color: rgb(32, 139, 254);
+      font-size: 14px;
+      margin-top: 2px;
+    `;
+    didDiv.textContent = `DID: ${did}`;
+    feedbackLink.parentElement.appendChild(didDiv);
+
+    tools.forEach((tool, index) => {
+      if (index > 0) {
+        const separator = document.createElement("span");
+        separator.textContent = " · ";
+        separator.style.color = "#687684";
+        feedbackLink.parentElement?.appendChild(separator);
+      }
+      
+      const toolLink = document.createElement("a");
+      toolLink.href = tool.url;
+      toolLink.target = "_blank";
+      toolLink.textContent = tool.name;
+      toolLink.style.cssText = `
         color: rgb(32, 139, 254);
         font-size: 14px;
+        display: inline;
         margin-top: 2px;
+        text-decoration: none;
       `;
-      didDiv.textContent = `DID: ${did}`;
-      feedbackLink.parentElement.appendChild(didDiv);
-
-      tools.forEach((tool, index) => {
-        if (index > 0) {
-          const separator = document.createElement("span");
-          separator.textContent = " · ";
-          separator.style.color = "#687684";
-          feedbackLink.parentElement?.appendChild(separator);
-        }
-        
-        const toolLink = document.createElement("a");
-        toolLink.href = tool.url;
-        toolLink.target = "_blank";
-        toolLink.textContent = tool.name;
-        toolLink.style.cssText = `
-          color: rgb(32, 139, 254);
-          font-size: 14px;
-          display: inline;
-          margin-top: 2px;
-          text-decoration: none;
-        `;
-        feedbackLink.parentElement?.appendChild(toolLink);
-      });
-    }
+      feedbackLink.parentElement?.appendChild(toolLink);
+    });
   }
 }
 
