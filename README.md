@@ -30,6 +30,4 @@ chrome extension to show users stats in bsky.app
 
 1. open profile
 
-2. refresh
-
-3. select tool from footer
+2. select tool from footer
