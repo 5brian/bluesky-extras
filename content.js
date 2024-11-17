@@ -95,28 +95,42 @@ function addLikesButton() {
   const existingButton = document.querySelector("#bsky-likes-btn");
   if (existingButton) return;
 
-  const button = document.createElement("button");
-  button.id = "bsky-likes-btn";
-  button.textContent = "Show Likes";
-  button.style.cssText = `
-      position: fixed;
-      top: 10px;
-      right: 10px;
-      z-index: 9999;
-      padding: 8px 16px;
-      background: #0066ff;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
+  const feedbackLink = document.querySelector(
+    'a[href*="blueskyweb.zendesk.com"]'
+  );
+  if (!feedbackLink?.parentElement) return;
+
+  const link = document.createElement("a");
+  link.id = "bsky-likes-btn";
+  link.textContent = "Show Likes";
+  link.href = "#";
+  link.dir = "auto";
+  link.role = "link";
+  link.className = "css-146c3p1 r-1loqt21";
+  link.style.cssText = `
+      color: rgb(32, 139, 254);
+      font-size: 14px;
+      letter-spacing: 0px;
+      font-weight: 400;
+      font-family: InterVariable, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+      font-variant: no-contextual;
     `;
 
-  button.onclick = () => {
+  link.onclick = (e) => {
+    e.preventDefault();
     const handle = window.location.pathname.split("/")[2];
     if (handle) fetchLikes(handle);
   };
 
-  document.body.appendChild(button);
+  const separator = document.createElement("span");
+  separator.textContent = " · ";
+  separator.style.color = "rgb(32, 139, 254)";
+
+  const firstLink = feedbackLink.parentElement.querySelector("a");
+  if (firstLink) {
+    feedbackLink.parentElement.insertBefore(link, firstLink);
+    feedbackLink.parentElement.insertBefore(separator, firstLink);
+  }
 }
 
 addLikesButton();
