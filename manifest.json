@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "bluesky-likes",
+  "version": "1.0",
+  "description": "display likes tab",
+  "permissions": ["activeTab"],
+  "host_permissions": ["https://api.bsky.app/*"],
+  "content_scripts": [
+    {
+      "matches": ["https://bsky.app/profile/*"],
+      "js": ["content.js"]
+    }
+  ]
+}
