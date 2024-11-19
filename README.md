@@ -1,6 +1,6 @@
 # bluesky-extras
 
-chrome extension to show DID tools in bsky.app 
+chrome extension to display DID tools in bsky.app 
  
 ## dev
 
