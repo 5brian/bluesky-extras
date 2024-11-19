@@ -3,11 +3,7 @@
   "name": "bluesky-extras",
   "version": "1.0.0",
   "description": "display DID tools in footer",
-  "permissions": ["activeTab"],
-  "host_permissions": [
-    "https://bsky.app/*",
-    "https://bsky.social/*"
-  ],
+  "host_permissions": ["https://bsky.app/*", "https://bsky.social/*"],
   "content_scripts": [
     {
       "matches": ["https://bsky.app/*"],
