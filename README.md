@@ -1,7 +1,7 @@
 # bluesky-extras
 
-chrome extension to display DID tools in bsky.app 
- 
+chrome extension to display a profile's DID tools in bsky.app
+
 ## dev
 
 1. clone:
