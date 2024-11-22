@@ -1,8 +1,9 @@
 {
   "manifest_version": 3,
   "name": "bluesky-extras",
-  "version": "1.0.0",
-  "description": "display DID tools in footer",
+  "version": "1.1.0",
+  "description": "",
+  "permissions": ["clipboardWrite"],
   "content_scripts": [
     {
       "matches": ["https://bsky.app/*"],

@@ -50,28 +50,6 @@ async function getPostContent(uri: string): Promise<PostContent | null> {
   }
 }
 
-async function fetchLikes(handle: string): Promise<void> {
-  try {
-    const did = await getDid(handle);
-    const response = await fetch(
-      `https://bsky.social/xrpc/com.atproto.repo.listRecords?repo=${did}&collection=app.bsky.feed.like`
-    );
-    if (!response.ok) throw new Error(`Server responded with ${response.status}`);
-
-    const data = await response.json();
-    const postsWithContent = await Promise.all(
-      data.records.map(async (like: LikeRecord) => ({
-        ...like,
-        postContent: await getPostContent(like.value.subject.uri)
-      }))
-    );
-
-    await showLikesPopup(postsWithContent);
-  } catch (error) {
-    alert("Error fetching likes: " + (error as Error).message);
-  }
-}
-
 async function getHandleFromDid(did: string): Promise<string | null> {
   try {
     const response = await fetch(
@@ -85,10 +63,33 @@ async function getHandleFromDid(did: string): Promise<string | null> {
   }
 }
 
+async function fetchLikes(handle: string): Promise<void> {
+  try {
+    const did = await getDid(handle);
+    const response = await fetch(
+      `https://bsky.social/xrpc/com.atproto.repo.listRecords?repo=${did}&collection=app.bsky.feed.like`
+    );
+    if (!response.ok)
+      throw new Error(`Server responded with ${response.status}`);
+
+    const data = await response.json();
+    const postsWithContent = await Promise.all(
+      data.records.map(async (like: LikeRecord) => ({
+        ...like,
+        postContent: await getPostContent(like.value.subject.uri),
+      }))
+    );
+
+    await showLikesPopup(postsWithContent);
+  } catch (error) {
+    alert("Error fetching likes: " + (error as Error).message);
+  }
+}
+
 async function showLikesPopup(likes: LikeRecord[]): Promise<void> {
   const overlay = document.createElement("div");
   const popup = document.createElement("div");
-  
+
   overlay.style.cssText = `
     position: fixed;
     top: 0;
@@ -164,11 +165,16 @@ async function showLikesPopup(likes: LikeRecord[]): Promise<void> {
       const postId = like.value.subject.uri.split("/").pop();
       const handle = handles.get(author) || author;
       const postUrl = `https://bsky.app/profile/${handle}/post/${postId}`;
-      const hasImages = !!(like.postContent?.embed?.images?.length || like.postContent?.embed?.media?.images?.length);
+      const hasImages = !!(
+        like.postContent?.embed?.images?.length ||
+        like.postContent?.embed?.media?.images?.length
+      );
 
       post.innerHTML = `
         <div style="margin-bottom: 5px;">@${handle}</div>
-        <div style="white-space: pre-wrap; margin-bottom: 10px;">${like.postContent?.text || ""}</div>
+        <div style="white-space: pre-wrap; margin-bottom: 10px;">${
+          like.postContent?.text || ""
+        }</div>
         ${hasImages ? `<div>[Post contains media]</div>` : ""}
         <div style="color: #666; font-size: 0.9em;">
           <a href="${postUrl}" target="_blank" style="color: rgb(32, 139, 254); text-decoration: none;">View post</a>
@@ -185,92 +191,118 @@ async function showLikesPopup(likes: LikeRecord[]): Promise<void> {
   document.body.append(overlay, popup);
 }
 
-async function addLikesButton(): Promise<void> {
-  if (document.querySelector("#bsky-likes-btn")) return;
-  
-  const feedbackLink = document.querySelector<HTMLAnchorElement>('a[href*="blueskyweb.zendesk.com"]');
-  if (!feedbackLink?.parentElement) {
-    setTimeout(addLikesButton, 500);
+function createMenuItem(text: string, onClick: () => void): HTMLButtonElement {
+  const item = document.createElement("button");
+  item.style.cssText = `
+    text-align: left;
+    width: 100%;
+    padding: 8px 16px;
+    font: inherit;
+    font-size: 14px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    display: block;
+    border-radius: 4px;
+    color: rgb(247, 247, 247);
+  `;
+  item.addEventListener("mouseover", () => {
+    item.style.backgroundColor = "rgba(255, 255, 255, 0.1)";
+  });
+  item.addEventListener("mouseout", () => {
+    item.style.backgroundColor = "transparent";
+  });
+  item.textContent = text;
+  item.onclick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onClick();
+  };
+  return item;
+}
+
+async function addMenuItems(): Promise<void> {
+  const menu = document.querySelector('div[role="menu"]');
+  if (!menu || document.querySelector("#bsky-tools-menu")) {
     return;
   }
-  
-  const link = document.createElement("div");
-  link.id = "bsky-likes-btn";
-  link.textContent = "Show Likes";
-  link.style.cssText = `
-    color: rgb(32, 139, 254);
-    font-size: 14px;
-    cursor: pointer;
-    margin-top: 2px;
-  `;
 
   const pathParts = window.location.pathname.split("/");
   const handle = pathParts[1] === "profile" ? pathParts[2] : null;
-  
-  if (!handle) {
-    return;  // Exit early if not on a profile page
-  }
 
-  link.onclick = (e) => {
-    e.preventDefault();
-    fetchLikes(handle);
-  };
+  if (!handle) return;
 
-  feedbackLink.parentElement?.appendChild(link);
+  try {
+    const did = await getDid(handle);
 
-  const response = await fetch(
-    `https://bsky.social/xrpc/com.atproto.repo.describeRepo?repo=${handle}`
-  );
+    const menuContainer = document.createElement("div");
+    menuContainer.id = "bsky-tools-menu";
+    menuContainer.style.cssText = `
+      background: rgb(39, 39, 42);
+      border-radius: 8px;
+      padding: 4px;
+      margin-top: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    `;
 
-  if (response.ok) {
-    const data = await response.json();
-    const did = data.did;
+    const showLikesItem = createMenuItem("Show Likes", () => {
+      fetchLikes(handle);
+      menu.remove();
+    });
+
+    const copyDidItem = createMenuItem("Copy DID", () => {
+      navigator.clipboard.writeText(did);
+      menu.remove();
+    });
 
     const tools = [
-      { name: "ATP Browser", url: `https://atproto-browser.vercel.app/at/${did}` },
+      {
+        name: "ATP Browser",
+        url: `https://atproto-browser.vercel.app/at/${did}`,
+      },
       { name: "PDSls", url: `https://pdsls.dev/at/${did}` },
       { name: "PLC Tracker", url: `https://pht.kpherox.dev/did/${did}` },
       { name: "Internect", url: `https://internect.info/did/${did}` },
-      { name: "SkyTools", url: `https://skytools.anon5r.com/history?id=${did}` }
+      {
+        name: "SkyTools",
+        url: `https://skytools.anon5r.com/history?id/${did}`,
+      },
     ];
 
-    const didDiv = document.createElement("div");
-    didDiv.style.cssText = `
-      color: rgb(32, 139, 254);
-      font-size: 14px;
-      margin-top: 2px;
-    `;
-    didDiv.textContent = `DID: ${did}`;
-    feedbackLink.parentElement.appendChild(didDiv);
+    menuContainer.appendChild(showLikesItem);
+    menuContainer.appendChild(copyDidItem);
 
-    tools.forEach((tool, index) => {
-      if (index > 0) {
-        const separator = document.createElement("span");
-        separator.textContent = " · ";
-        separator.style.color = "#687684";
-        feedbackLink.parentElement?.appendChild(separator);
-      }
-      
-      const toolLink = document.createElement("a");
-      toolLink.href = tool.url;
-      toolLink.target = "_blank";
-      toolLink.textContent = tool.name;
-      toolLink.style.cssText = `
-        color: rgb(32, 139, 254);
-        font-size: 14px;
-        display: inline;
-        margin-top: 2px;
-        text-decoration: none;
-      `;
-      feedbackLink.parentElement?.appendChild(toolLink);
+    tools.forEach((tool) => {
+      const button = createMenuItem(tool.name, () => {
+        window.open(tool.url, "_blank");
+        menu.remove();
+      });
+      menuContainer.appendChild(button);
     });
+
+    menu.appendChild(menuContainer);
+  } catch (error) {
+    console.error("Error adding menu items:", error);
   }
 }
 
-const observer = new MutationObserver(addLikesButton);
+const observer = new MutationObserver((mutations) => {
+  for (const mutation of mutations) {
+    const nodes = Array.from(mutation.addedNodes);
+    for (const node of nodes) {
+      if (node instanceof HTMLElement) {
+        if (
+          node.getAttribute("role") === "menu" ||
+          node.querySelector('div[role="menu"]')
+        ) {
+          setTimeout(addMenuItems, 0);
+        }
+      }
+    }
+  }
+});
 
-addLikesButton();
-observer.observe(document.body, {
+observer.observe(document, {
   childList: true,
-  subtree: true
+  subtree: true,
 });
