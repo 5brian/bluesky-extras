@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "bluesky-extras",
   "version": "1.1.0",
-  "description": "",
+  "description": "display DID tools in bsky.app profile's context menu",
   "permissions": ["clipboardWrite"],
   "content_scripts": [
     {

@@ -261,11 +261,11 @@ async function addMenuItems(): Promise<void> {
         url: `https://atproto-browser.vercel.app/at/${did}`,
       },
       { name: "PDSls", url: `https://pdsls.dev/at/${did}` },
-      { name: "PLC Tracker", url: `https://pht.kpherox.dev/did/${did}` },
       { name: "Internect", url: `https://internect.info/did/${did}` },
+      { name: "PLC Tracker", url: `https://pht.kpherox.dev/did/${did}` },
       {
         name: "SkyTools",
-        url: `https://skytools.anon5r.com/history?id/${did}`,
+        url: `https://skytools.anon5r.com/history?id=${did}`,
       },
     ];
 
