@@ -30,6 +30,6 @@ chrome extension to display a profile's DID tools in bsky.app
 
 1. open profile
 
-2. open context menu (...)
+2. open user context menu (...)
 
 3. select tool
