@@ -7,7 +7,7 @@ chrome extension to display a profile's DID tools in bsky.app
 1. clone:
 
    ```
-   git clone https://github.com/yoleuh/bluesky-extras.git
+   git clone https://github.com/5brian/bluesky-extras.git
    ```
 
 2. run:
